@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ClipboardCheck, ShieldCheck } from 'lucide-react';
 
@@ -12,32 +11,46 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [loading, setLoading] = useState(false);
 
   const formatPhone = (val: string) => {
-    // Remove non-digits
-    const digits = val.replace(/\D/g, '');
-    // Ensure it starts with 7 or 8 (replace with 7)
-    let clean = digits;
+    // 1. Remove all non-digit characters
+    let digits = val.replace(/\D/g, '');
+
+    // 2. Handle pasting or typing with 8 or 7 at start
     if (digits.length > 0) {
-      if (digits[0] === '8') clean = '7' + digits.slice(1);
-      else if (digits[0] !== '7') clean = '7' + digits;
+      if (digits[0] === '8') {
+        digits = '7' + digits.slice(1);
+      } else if (digits[0] !== '7') {
+        // If user types '9...', assume it's a mobile number
+        digits = '7' + digits;
+      }
     }
-    
-    // Limit to 11 chars
-    clean = clean.slice(0, 11);
 
-    if (clean.length === 0) return '';
-    if (clean.length < 2) return '+7';
+    // 3. Limit to 11 digits (7 + 10 digits)
+    digits = digits.slice(0, 11);
 
+    // 4. Build the formatted string
     // Format: +7 (XXX) XXX-XX-XX
+    if (digits.length === 0) return '';
+    
     let formatted = '+7';
-    if (clean.length > 1) formatted += ' (' + clean.slice(1, 4);
-    if (clean.length >= 5) formatted += ') ' + clean.slice(4, 7);
-    if (clean.length >= 8) formatted += '-' + clean.slice(7, 9);
-    if (clean.length >= 10) formatted += '-' + clean.slice(9, 11);
+    if (digits.length > 1) {
+      formatted += ' (' + digits.slice(1, 4);
+    }
+    if (digits.length >= 5) {
+      formatted += ') ' + digits.slice(4, 7);
+    }
+    if (digits.length >= 8) {
+      formatted += '-' + digits.slice(7, 9);
+    }
+    if (digits.length >= 10) {
+      formatted += '-' + digits.slice(9, 11);
+    }
     
     return formatted;
   };
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Prevent deleting the +7 prefix completely if possible, 
+    // but the formatter handles empty string returning ''
     setPhone(formatPhone(e.target.value));
   };
 
@@ -97,6 +110,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 ml-1">Телефон</label>
             <input 
               type="tel" 
+              required
               placeholder="+7 (999) 000-00-00" 
               className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-4 outline-none focus:border-blue-500 focus:bg-white transition-all font-medium text-slate-800 placeholder-slate-400"
               value={phone} 
@@ -108,7 +122,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
             <button 
               type="submit" 
               className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-500/30 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
-              disabled={!name.trim() || loading}
+              disabled={!name.trim() || phone.length < 18 || loading} // +7 (XXX) XXX-XX-XX is 18 chars
             >
               {loading ? 'Авторизация...' : 'Начать работу'}
             </button>

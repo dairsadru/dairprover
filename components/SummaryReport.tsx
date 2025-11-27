@@ -202,7 +202,7 @@ export const SummaryReport: React.FC<SummaryProps> = ({ data }) => {
                  {recommendation.verdict === 'Recommended' ? 'Рекомендуется к покупке' : 
                   recommendation.verdict === 'Conditional' ? 'Рекомендуется с оговорками' : 'Не рекомендуется'}
                </h3>
-               <p className="text-sm opacity-90">{recommendation.reasons.join('. ') || 'Автомобиль в отличном состоянии.'}</p>
+               <p className="text-sm opacity-90">{recommendation.reasons.length > 0 ? recommendation.reasons.join('. ') : 'Автомобиль в отличном состоянии.'}</p>
             </div>
         </div>
 
@@ -224,14 +224,20 @@ export const SummaryReport: React.FC<SummaryProps> = ({ data }) => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
-                            {bodyRows.map((row, i) => (
-                                <tr key={i} className={row.status !== 'OK' ? 'bg-red-50/10' : ''}>
+                            {bodyRows.map((row, i) => {
+                                // Highlight logic: Red background if defect/replaced, Yellow if repainted
+                                let rowClass = "";
+                                if (row.status === 'Defect' || row.status === 'Replaced') rowClass = "bg-red-50 text-red-900";
+                                else if (row.status === 'Repainted') rowClass = "bg-yellow-50 text-yellow-900";
+
+                                return (
+                                <tr key={i} className={rowClass}>
                                     <td className="py-2 pl-2 font-semibold text-slate-700">{row.name}</td>
                                     <td className="py-2"><StatusBadge status={row.status} /></td>
                                     <td className="py-2 font-mono text-slate-600">{row.lkp ? `${row.lkp}` : '-'}</td>
                                     <td className="py-2 text-gray-500 max-w-[120px] truncate">{row.notes}</td>
                                 </tr>
-                            ))}
+                            )})}
                         </tbody>
                     </table>
                 </div>
@@ -337,10 +343,10 @@ const ChecklistSummaryBlock = ({ title, category, data }: { title: string, categ
                                 {passed ? (
                                     <CheckCircle size={12} className="text-green-600" />
                                 ) : (
-                                    <XCircle size={12} className="text-gray-300" /> 
+                                    <XCircle size={12} className="text-red-500" /> 
                                 )}
                             </div>
-                            <span className={passed ? 'text-slate-700 font-medium' : 'text-slate-400'}>
+                            <span className={passed ? 'text-slate-700 font-medium' : 'text-red-600 font-bold'}>
                                 {key}
                             </span>
                         </li>
@@ -381,7 +387,7 @@ const TechResultRow = ({ label, item }: { label: string, item: TechCheck }) => {
     if (item.status === 'Bad') { color = "text-red-600"; icon = <AlertTriangle size={12}/>; }
 
     return (
-       <div className="flex justify-between items-center py-1">
+       <div className={`flex justify-between items-center py-1 px-2 rounded ${item.status === 'Bad' ? 'bg-red-50' : ''}`}>
           <span className="text-gray-500">{label}</span>
           <span className={`flex items-center font-bold text-xs ${color} gap-1`}>
              {icon} {item.status === 'Good' ? 'Норма' : item.status === 'Fair' ? 'Внимание' : 'Плохо'}

@@ -2,9 +2,9 @@
 import React from 'react';
 import { InspectionData, BodyPart, Wheel, ObdCode, TechCheck } from '../types';
 import { Input, Select, Textarea, Checkbox, Card, Button, Modal, StatusSelector, StatusOption } from './UIComponents';
-import { Plus, Trash2, AlertTriangle, Camera, X, Search, Sparkles, Wand2, Image as ImageIcon, CheckCircle, AlertCircle, Droplets, Gauge, Settings, Wind, Thermometer, Battery, Armchair, Copy, ShieldCheck, Send, Database, Disc, ChevronDown, ChevronUp, FileText, CheckSquare, Tag } from 'lucide-react';
+import { Plus, Trash2, AlertTriangle, Camera, X, Search, Sparkles, Image as ImageIcon, CheckCircle, AlertCircle, Droplets, Gauge, Settings, Wind, Thermometer, Battery, Armchair, Copy, ShieldCheck, Send, Database, Disc, ChevronDown, ChevronUp, FileText, CheckSquare, Tag } from 'lucide-react';
 import { CarPartType, InteractiveCarMap } from './CarIcons';
-import { analyzeObdCode, analyzeCarImage, generateCarPreview } from '../utils/aiService';
+import { analyzeObdCode, analyzeCarImage } from '../utils/aiService';
 
 interface StepProps {
   data: InspectionData;
@@ -91,7 +91,7 @@ const STATUS_3_OPTS: StatusOption[] = [
 
 const BODY_STATUS_OPTS: StatusOption[] = [
   { value: 'OK', label: 'В родной краске', icon: <CheckCircle size={18}/>, colorClass: 'bg-green-100 text-green-700 border-green-300 ring-green-400' },
-  { value: 'Repainted', label: 'Окрас (Косметика)', icon: <Wand2 size={18}/>, colorClass: 'bg-yellow-100 text-yellow-700 border-yellow-300 ring-yellow-400' },
+  { value: 'Repainted', label: 'Окрас (Косметика)', icon: <Sparkles size={18}/>, colorClass: 'bg-yellow-100 text-yellow-700 border-yellow-300 ring-yellow-400' },
   { value: 'Defect', label: 'Дефект / Ремонт', icon: <AlertTriangle size={18}/>, colorClass: 'bg-red-100 text-red-700 border-red-300 ring-red-400' },
   { value: 'Replaced', label: 'Замена детали', icon: <Settings size={18}/>, colorClass: 'bg-red-100 text-red-800 border-red-300 ring-red-400' },
 ];
@@ -238,9 +238,14 @@ const TECH_ISSUES = {
 };
 
 const POPULAR_MAKES = [
-  "Toyota", "Lada (ВАЗ)", "Kia", "Hyundai", "BMW", "Mercedes-Benz", "Volkswagen",
-  "Skoda", "Nissan", "Renault", "Haval", "Chery", "Geely", "Ford", "Mazda", "Honda",
-  "Audi", "Mitsubishi", "Lexus", "Land Rover", "Porsche", "Subaru", "Suzuki", "Infiniti"
+  "Acura", "Alfa Romeo", "Audi", "Bentley", "BMW", "Cadillac", "Changan", "Chery", "Chevrolet", 
+  "Chrysler", "Citroen", "Daewoo", "Datsun", "Dodge", "Exeed", "FAW", "Fiat", "Ford", 
+  "GAC", "Geely", "Genesis", "Great Wall", "Haval", "Honda", "Hongqi", "Hyundai", "Infiniti", 
+  "Isuzu", "JAC", "Jaguar", "Jeep", "Jetour", "Kia", "Lada (ВАЗ)", "Land Rover", "Lexus", 
+  "Lifan", "Lincoln", "LiXiang", "Mazda", "Mercedes-Benz", "Mini", "Mitsubishi", "Nissan", 
+  "Omoda", "Opel", "Peugeot", "Porsche", "Renault", "Rolls-Royce", "Seat", "Skoda", 
+  "Smart", "SsangYong", "Subaru", "Suzuki", "Tank", "Tesla", "Toyota", "Volkswagen", 
+  "Volvo", "Voyah", "Zeekr", "ГАЗ", "УАЗ"
 ];
 
 const REGIONS = [
@@ -249,9 +254,8 @@ const REGIONS = [
   "Москва", "Московская обл.", "Санкт-Петербург"
 ];
 
-const COMMON_ENGINES = [
-  "1.6 Бензин", "1.4 Бензин", "2.0 Бензин", "2.5 Бензин", "3.5 Бензин",
-  "1.5 Дизель", "2.0 Дизель", "3.0 Дизель", "Электро", "Гибрид"
+const FUEL_TYPES = [
+  "Бензин", "Дизель", "Гибрид", "Электро", "ГБО (Газ)"
 ];
 
 // --- HELPER COMPONENT: CHECKLIST BLOCK ---
@@ -328,32 +332,10 @@ const ChecklistBlock = ({
 
 // --- Step 1: General ---
 export const Step1General: React.FC<StepProps> = ({ data, onChange, errors }) => {
-  const [isGenerating, setIsGenerating] = React.useState(false);
-  const [showGenModal, setShowGenModal] = React.useState(false);
-  const [genSize, setGenSize] = React.useState<'1K'|'2K'|'4K'>('1K');
-  const [generatedImageUrl, setGeneratedImageUrl] = React.useState<string | null>(null);
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     const val = type === 'number' ? (value === '' ? '' : Number(value)) : value;
     onChange(name as keyof InspectionData, val);
-  };
-
-  const handleGeneratePreview = async () => {
-    if (!data.make || !data.model) {
-      alert("Укажите марку и модель для генерации");
-      return;
-    }
-    setIsGenerating(true);
-    try {
-      const prompt = `Professional studio photo of a ${data.color || ''} ${data.year || ''} ${data.make} ${data.model}, clean background, high quality, 4k, realistic car photography`;
-      const url = await generateCarPreview(prompt, genSize);
-      if (url) setGeneratedImageUrl(url);
-    } catch (e) {
-      alert("Ошибка генерации изображения");
-    } finally {
-      setIsGenerating(false);
-    }
   };
 
   return (
@@ -392,7 +374,7 @@ export const Step1General: React.FC<StepProps> = ({ data, onChange, errors }) =>
             value={data.year} 
             onChange={handleChange} 
             placeholder="2018" 
-            min={1980} max={2100} 
+            min={1980} max={2030} 
             error={errors?.year}
             required
         />
@@ -420,17 +402,34 @@ export const Step1General: React.FC<StepProps> = ({ data, onChange, errors }) =>
         />
         
         <div>
-          <Input 
-            label="Двигатель" 
-            name="engine" 
-            value={data.engine} 
-            onChange={handleChange} 
-            placeholder="2.5 бензин" 
-            list="engines"
-          />
-          <datalist id="engines">
-            {COMMON_ENGINES.map(e => <option key={e} value={e} />)}
-          </datalist>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Двигатель (Тип / Объём)</label>
+          <div className="flex gap-2">
+            <select 
+              className="w-1/2 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm"
+              onChange={(e) => {
+                 // Append Fuel type to engine string if not present
+                 const val = e.target.value;
+                 const current = String(data.engine).split(' ');
+                 const vol = current[0] && !isNaN(parseFloat(current[0])) ? current[0] : '';
+                 onChange('engine', `${vol} ${val}`.trim());
+              }}
+            >
+               <option value="">Тип...</option>
+               {FUEL_TYPES.map(f => <option key={f} value={f}>{f}</option>)}
+            </select>
+            <input 
+               type="text" 
+               className="w-1/2 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm"
+               placeholder="2.5"
+               onChange={(e) => {
+                 const vol = e.target.value;
+                 const current = String(data.engine).split(' ');
+                 const type = current.length > 1 ? current.slice(1).join(' ') : '';
+                 onChange('engine', `${vol} ${type}`.trim());
+               }}
+            />
+          </div>
+          <div className="text-xs text-gray-500 mt-1">Результат: {data.engine}</div>
         </div>
         
         <Select 
@@ -477,6 +476,8 @@ export const Step1General: React.FC<StepProps> = ({ data, onChange, errors }) =>
             { value: 'Зеленый', label: 'Зеленый' },
             { value: 'Бежевый', label: 'Бежевый' },
             { value: 'Желтый', label: 'Желтый' },
+            { value: 'Оранжевый', label: 'Оранжевый' },
+            { value: 'Фиолетовый', label: 'Фиолетовый' },
             { value: 'Другой', label: 'Другой' },
           ]}
         />
@@ -510,57 +511,7 @@ export const Step1General: React.FC<StepProps> = ({ data, onChange, errors }) =>
       
       <div className="flex items-center gap-4">
         <Textarea label="Дополнительные заметки" name="generalNotes" value={data.generalNotes} onChange={handleChange} placeholder="Комплектация, ключи, история..." className="flex-1" />
-        
-        {/* Generate Image Feature */}
-        <div className="shrink-0 flex flex-col items-center justify-center pt-6">
-           <Button variant="secondary" onClick={() => setShowGenModal(true)} type="button">
-             <ImageIcon size={18} className="mr-2" />
-             Создать обложку
-           </Button>
-           {generatedImageUrl && (
-             <div className="mt-2 relative group cursor-pointer" onClick={() => setShowGenModal(true)} title="Нажмите для просмотра">
-                <img src={generatedImageUrl} alt="Cover" className="w-16 h-10 object-cover rounded border border-gray-300 shadow-sm" />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded" />
-             </div>
-           )}
-        </div>
       </div>
-
-      <Modal isOpen={showGenModal} onClose={() => setShowGenModal(false)} title="Генерация обложки отчета">
-        <div className="space-y-4">
-           <div className="bg-blue-50 p-3 rounded-lg text-sm text-blue-800">
-             Используется AI модель <strong>Gemini Nano Banana Pro</strong> для создания реалистичного изображения автомобиля для отчета.
-           </div>
-           
-           <Select 
-             label="Размер изображения" 
-             value={genSize} 
-             onChange={(e) => setGenSize(e.target.value as any)}
-             options={[
-               {value: '1K', label: '1K (Стандарт)'},
-               {value: '2K', label: '2K (Высокое)'},
-               {value: '4K', label: '4K (Ультра)'},
-             ]}
-           />
-           
-           {generatedImageUrl ? (
-             <div className="relative rounded-lg overflow-hidden border border-gray-200">
-               <img src={generatedImageUrl} alt="Generated" className="w-full h-auto" />
-               <Button onClick={handleGeneratePreview} disabled={isGenerating} className="w-full mt-2">
-                 {isGenerating ? 'Генерация...' : 'Перегенерировать'}
-               </Button>
-             </div>
-           ) : (
-             <Button onClick={handleGeneratePreview} disabled={isGenerating} className="w-full py-4">
-               {isGenerating ? (
-                 <span className="flex items-center justify-center"><Loader size={18} className="animate-spin mr-2"/> Создание...</span>
-               ) : (
-                 <span className="flex items-center justify-center"><Wand2 size={18} className="mr-2"/> Сгенерировать авто</span>
-               )}
-             </Button>
-           )}
-        </div>
-      </Modal>
     </div>
   );
 };
