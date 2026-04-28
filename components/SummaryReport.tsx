@@ -129,6 +129,15 @@ export const SummaryReport: React.FC<SummaryProps> = ({ data }) => {
     { name: 'Крыло (П.З.)', type: 'rrQuarter' },
   ].map(item => ({ ...item, ...data[item.type as CarPartType] }));
 
+  const hasLegalBlockers = !data.vinMatches || !data.ptsOriginal;
+  const hasSeriousBodyRisk = bodyRows.some((p) => p.status === 'Replaced' || (p.status === 'Defect' && p.defectType === 'Rust'));
+  const hasExpensiveTechRisk =
+    [data.engineSound, data.engineSmoke, data.engineLeaks, data.gearboxShifting, data.suspensionKnocks, data.steeringPlay].some((x) => x.status === 'Bad') ||
+    data.obdCodes.some((x) => x.severity === 'Severe');
+  const immediateBudget = data.immediateBudgetFrom || data.immediateBudgetTo
+    ? `${data.immediateBudgetFrom || 0}–${data.immediateBudgetTo || data.immediateBudgetFrom || 0} ₽`
+    : 'Не указан';
+
   return (
     <div className="animate-in fade-in duration-500 pb-20">
       
@@ -149,9 +158,9 @@ export const SummaryReport: React.FC<SummaryProps> = ({ data }) => {
         {/* HEADER */}
         <div className="flex justify-between items-start border-b-4 border-blue-900 pb-6 mb-8">
             <div>
-              <h1 className="text-4xl font-black text-blue-900 uppercase tracking-tighter">ДаирАвтопроверка</h1>
+              <h1 className="text-4xl font-black text-blue-900 uppercase tracking-tighter">ДаирАвто</h1>
               <div className="mt-3 text-sm text-gray-600 space-y-1">
-                <div className="flex items-center gap-2"><MapPin size={14}/> Профессиональный автоподбор</div>
+                <div className="flex items-center gap-2"><MapPin size={14}/> Профессиональная проверка авто</div>
                 <div className="flex items-center gap-2"><Phone size={14}/> +7 931 244 6003</div>
               </div>
             </div>
@@ -204,6 +213,30 @@ export const SummaryReport: React.FC<SummaryProps> = ({ data }) => {
                </h3>
                <p className="text-sm opacity-90">{recommendation.reasons.length > 0 ? recommendation.reasons.join('. ') : 'Автомобиль в отличном состоянии.'}</p>
             </div>
+        </div>
+
+        <div className="mb-8 p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-900">
+          <p className="text-sm font-semibold">Реклама: компания по проверке авто «ДаирАвто» — 8 (931) 244-60-03.</p>
+        </div>
+
+        <div className="mb-8 border border-slate-200 rounded-xl p-4">
+          <h3 className="text-gray-500 text-xs uppercase font-bold mb-3">Исполнительное резюме (1 страница)</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+            <QuickCheckRow title="VIN и документы совпадают" ok={!hasLegalBlockers} />
+            <QuickCheckRow title="Юридические блокеры отсутствуют" ok={!data.accidents && !hasLegalBlockers} />
+            <QuickCheckRow title="Серьезных кузовных вмешательств нет" ok={!hasSeriousBodyRisk} />
+            <QuickCheckRow title="Дорогих техрисков не выявлено" ok={!hasExpensiveTechRisk} />
+            <div className="rounded-lg border border-slate-200 px-3 py-2 bg-slate-50">
+              <div className="text-xs text-gray-500">Бюджет вложений сразу после сделки</div>
+              <div className="font-bold text-slate-800">{immediateBudget}</div>
+            </div>
+          </div>
+          <div className="mt-3 text-xs text-gray-500">Итоговое решение: {recommendation.verdict === 'Not Recommended' ? 'Не годен' : recommendation.verdict === 'Conditional' ? 'Требует внимания' : 'Годен'}</div>
+          {data.clientConclusion && (
+            <div className="mt-3 bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm text-slate-700">
+              {data.clientConclusion}
+            </div>
+          )}
         </div>
 
         {/* BODY */}
@@ -262,6 +295,27 @@ export const SummaryReport: React.FC<SummaryProps> = ({ data }) => {
         </div>
 
         {/* TECH CHECKLIST - DETAILED GRID */}
+        <div className="mb-8">
+          <h3 className="text-gray-400 text-xs uppercase font-bold mb-4">Компактный обязательный чек-лист</h3>
+          <table className="w-full text-xs border border-slate-200 rounded-lg overflow-hidden">
+            <thead className="bg-slate-50 text-slate-600">
+              <tr>
+                <th className="text-left px-3 py-2">Блок</th>
+                <th className="text-left px-3 py-2">Статус</th>
+                <th className="text-left px-3 py-2">Приоритет</th>
+              </tr>
+            </thead>
+            <tbody>
+              <CompactRow title="Юридическая часть" status={!hasLegalBlockers ? 'Годен' : 'Не годен'} priority="Обязательно" />
+              <CompactRow title="Кузов и безопасность" status={!hasSeriousBodyRisk ? 'Годен' : 'Требует внимания'} priority="Обязательно" />
+              <CompactRow title="Двигатель и трансмиссия" status={!hasExpensiveTechRisk ? 'Годен' : 'Требует внимания'} priority="Обязательно" />
+              <CompactRow title="Ходовая / тормоза / шины" status={data.suspensionKnocks.status === 'Bad' || data.steeringPlay.status === 'Bad' ? 'Не годен' : 'Требует внимания'} priority="Обязательно" />
+              <CompactRow title="Электроника и АКБ" status={data.acWorking && data.windowsWorking ? 'Годен' : 'Требует внимания'} priority="Важно" />
+              <CompactRow title="Салон и признаки пробега" status={data.upholstery.status === 'Bad' ? 'Требует внимания' : 'Годен'} priority="Опционально" />
+            </tbody>
+          </table>
+        </div>
+
         <div className="mb-8">
             <h3 className="text-gray-400 text-xs uppercase font-bold mb-4">Техническое состояние</h3>
             <div className="grid grid-cols-2 gap-8 text-sm">
@@ -356,6 +410,21 @@ const ChecklistSummaryBlock = ({ title, category, data }: { title: string, categ
         </div>
     );
 }
+
+const QuickCheckRow = ({ title, ok }: { title: string; ok: boolean }) => (
+  <div className={`rounded-lg border px-3 py-2 ${ok ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+    <div className="text-xs text-gray-500">{title}</div>
+    <div className={`font-bold ${ok ? 'text-green-700' : 'text-red-700'}`}>{ok ? 'Да' : 'Нет'}</div>
+  </div>
+);
+
+const CompactRow = ({ title, status, priority }: { title: string; status: 'Годен' | 'Требует внимания' | 'Не годен'; priority: string }) => (
+  <tr className="border-t border-slate-100">
+    <td className="px-3 py-2">{title}</td>
+    <td className={`px-3 py-2 font-semibold ${status === 'Годен' ? 'text-green-700' : status === 'Не годен' ? 'text-red-700' : 'text-yellow-700'}`}>{status}</td>
+    <td className="px-3 py-2">{priority}</td>
+  </tr>
+);
 
 const StatusBadge = ({ status }: { status: string }) => {
     let style = "text-slate-500";

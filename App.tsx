@@ -123,7 +123,7 @@ export default function App() {
               <Car size={24} />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-gray-900 leading-tight">ДаирАвтопроверка</h1>
+              <h1 className="text-lg font-bold text-gray-900 leading-tight">ДаирАвто • Автопроверка</h1>
               <p className="text-xs text-gray-500 hidden sm:block">Эксперт: {formData.expertName}</p>
             </div>
           </div>
@@ -152,6 +152,15 @@ export default function App() {
            <p className="text-gray-500 mt-1 text-sm">
              {currentStep === 5 ? 'Проверьте данные и скачайте PDF' : 'Заполните данные осмотра внимательно'}
            </p>
+        </div>
+
+        <div className="mb-6 rounded-xl border border-primary-200 bg-primary-50 px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <p className="text-sm text-primary-900">
+            <strong>Проверка авто «ДаирАвто»</strong> — профессиональный осмотр перед покупкой.
+          </p>
+          <a href="tel:+79312446003" className="text-sm font-bold text-primary-700 hover:text-primary-900">
+            📞 8 (931) 244-60-03
+          </a>
         </div>
         
         {/* Validation Error Banner */}

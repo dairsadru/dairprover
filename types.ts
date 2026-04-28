@@ -28,6 +28,14 @@ export interface TechCheck {
   comment?: string;
 }
 
+export interface InspectionAttachment {
+  name: string;
+  type: string;
+  size: number;
+  uploadedAt: string;
+  url: string;
+}
+
 export interface InspectionData {
   expertName: string;
   
@@ -117,6 +125,9 @@ export interface InspectionData {
   customsCleared: boolean;
   serviceRecords: boolean;
   expertNotes: string;
+  clientConclusion: string;
+  immediateBudgetFrom: number | '';
+  immediateBudgetTo: number | '';
   obdCodes: ObdCode[];
 
   // NEW: Comprehensive Checklists
@@ -127,6 +138,14 @@ export interface InspectionData {
     techStatic: Record<string, boolean>; // IV. Tech Static
     testDrive: Record<string, boolean>;  // V. Dynamic
     professional: Record<string, boolean>; // VI. Professional
+  };
+
+  inspectionFiles: {
+    general: InspectionAttachment[];
+    body: InspectionAttachment[];
+    glass: InspectionAttachment[];
+    interior: InspectionAttachment[];
+    history: InspectionAttachment[];
   };
 
   [key: string]: any;
@@ -231,6 +250,9 @@ export const INITIAL_DATA: InspectionData = {
   customsCleared: true,
   serviceRecords: false,
   expertNotes: '',
+  clientConclusion: '',
+  immediateBudgetFrom: '',
+  immediateBudgetTo: '',
   obdCodes: [],
 
   extendedChecklist: {
@@ -240,7 +262,15 @@ export const INITIAL_DATA: InspectionData = {
     techStatic: {},
     testDrive: {},
     professional: {}
-  }
+  },
+
+  inspectionFiles: {
+    general: [],
+    body: [],
+    glass: [],
+    interior: [],
+    history: []
+  },
 };
 
 export interface ScoreResult {

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { InspectionData, BodyPart, Wheel, ObdCode, TechCheck } from '../types';
+import { InspectionData, BodyPart, Wheel, ObdCode, TechCheck, InspectionAttachment } from '../types';
 import { Input, Select, Textarea, Checkbox, Card, Button, Modal, StatusSelector, StatusOption } from './UIComponents';
 import { Plus, Trash2, AlertTriangle, Camera, X, Search, Sparkles, Image as ImageIcon, CheckCircle, AlertCircle, Droplets, Gauge, Settings, Wind, Thermometer, Battery, Armchair, Copy, ShieldCheck, Send, Database, Disc, ChevronDown, ChevronUp, FileText, CheckSquare, Tag } from 'lucide-react';
 import { CarPartType, InteractiveCarMap } from './CarIcons';
@@ -512,6 +512,8 @@ export const Step1General: React.FC<StepProps> = ({ data, onChange, errors }) =>
       <div className="flex items-center gap-4">
         <Textarea label="Дополнительные заметки" name="generalNotes" value={data.generalNotes} onChange={handleChange} placeholder="Комплектация, ключи, история..." className="flex-1" />
       </div>
+
+      <AttachmentSection title="Материалы к общему осмотру" section="general" data={data} onChange={onChange} />
     </div>
   );
 };
@@ -522,6 +524,106 @@ const Loader = ({size, className}: {size?: number, className?: string}) => (
         <path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="0.8" />
     </svg>
 );
+
+const AttachmentSection = ({
+  title,
+  section,
+  data,
+  onChange,
+}: {
+  title: string;
+  section: keyof InspectionData['inspectionFiles'];
+  data: InspectionData;
+  onChange: (key: keyof InspectionData, value: any) => void;
+}) => {
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = React.useState(false);
+  const files = data.inspectionFiles?.[section] || [];
+
+  const updateFiles = (nextFiles: InspectionAttachment[]) => {
+    onChange('inspectionFiles', {
+      ...data.inspectionFiles,
+      [section]: nextFiles,
+    });
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.length) return;
+    setIsUploading(true);
+    const selected = Array.from(e.target.files);
+    try {
+      const loadedFiles = await Promise.all(
+        selected.map(
+          (file) =>
+            new Promise<InspectionAttachment>((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                resolve({
+                  name: file.name,
+                  type: file.type || 'application/octet-stream',
+                  size: file.size,
+                  uploadedAt: new Date().toISOString(),
+                  url: String(reader.result || ''),
+                });
+              };
+              reader.readAsDataURL(file);
+            })
+        )
+      );
+
+      updateFiles([...(files || []), ...loadedFiles]);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const removeFile = (index: number) => {
+    const nextFiles = [...files];
+    nextFiles.splice(index, 1);
+    updateFiles(nextFiles);
+  };
+
+  const formatSize = (size: number) =>
+    size > 1024 * 1024 ? `${(size / (1024 * 1024)).toFixed(1)} МБ` : `${Math.round(size / 1024)} КБ`;
+
+  return (
+    <Card className="border-dashed border-primary-200 bg-primary-50/30">
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <h4 className="text-sm font-bold text-primary-900">{title}</h4>
+        <span className="text-xs text-gray-500">Фото + отчеты (PDF, DOC, XLS)</span>
+      </div>
+
+      {files.length > 0 && (
+        <div className="mb-3 grid grid-cols-1 gap-2">
+          {files.map((file, idx) => {
+            const isImage = file.type.startsWith('image/');
+            return (
+              <div key={`${file.name}-${idx}`} className="flex items-center gap-3 bg-white border border-gray-200 rounded-lg p-2">
+                <div className="w-11 h-11 rounded-md overflow-hidden shrink-0 bg-gray-100 flex items-center justify-center">
+                  {isImage ? <img src={file.url} alt={file.name} className="w-full h-full object-cover" /> : <FileText size={16} className="text-gray-500" />}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium text-gray-800 truncate">{file.name}</p>
+                  <p className="text-[11px] text-gray-500">{formatSize(file.size)}</p>
+                </div>
+                <button type="button" onClick={() => removeFile(idx)} className="p-1 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-50">
+                  <X size={14} />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <input type="file" ref={fileInputRef} className="hidden" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" onChange={handleFileUpload} />
+      <Button type="button" variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="w-full">
+        <Camera size={14} className="mr-1.5" />
+        {isUploading ? 'Загружаем...' : 'Добавить файлы'}
+      </Button>
+    </Card>
+  );
+};
 
 // --- Step 2: Body ---
 const BodyPartForm: React.FC<{ 
@@ -764,11 +866,11 @@ export const Step2Body: React.FC<StepProps> = ({ data, onChange }) => {
           />
         </div>
 
-        <div className="flex flex-wrap justify-center gap-3 text-xs text-gray-600">
-           <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-green-500 mr-1"></div> Родная краска</div>
-           <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-yellow-500 mr-1"></div> Окрас</div>
-           <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-orange-500 mr-1"></div> Дефект</div>
-           <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-red-600 mr-1"></div> Замена/Ржавчина</div>
+        <div className="flex flex-wrap justify-center gap-2 text-xs text-gray-700">
+           <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-green-50 border border-green-200">🟢 Родная</div>
+           <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-yellow-50 border border-yellow-200">🟡 Окрас</div>
+           <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-orange-50 border border-orange-200">🟠 Дефект</div>
+           <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-red-50 border border-red-200">🔴 Замена / неоригинал</div>
         </div>
       </div>
 
@@ -785,6 +887,8 @@ export const Step2Body: React.FC<StepProps> = ({ data, onChange }) => {
           />
         )}
       </Modal>
+
+      <AttachmentSection title="Общие фото кузова и документы по кузовной части" section="body" data={data} onChange={onChange} />
     </div>
   );
 };
@@ -854,6 +958,8 @@ export const Step3Glass: React.FC<StepProps> = ({ data, onChange }) => {
           value={data.glassNotes} 
           onChange={(e) => onChange('glassNotes', e.target.value)}
       />
+
+      <AttachmentSection title="Фото стекол / зеркал и доп. файлы" section="glass" data={data} onChange={onChange} />
     </div>
   );
 };
@@ -1163,6 +1269,7 @@ export const Step4Interior: React.FC<StepProps> = ({ data, onChange }) => {
       </div>
       
       <Textarea label="Заметки по ходовой/колёсам" value={data.wheelsNotes} onChange={(e) => onChange('wheelsNotes', e.target.value)} />
+      <AttachmentSection title="Фото салона, техчасти и прочие вложения" section="interior" data={data} onChange={onChange} />
     </div>
   );
 };
@@ -1315,6 +1422,37 @@ export const Step5History: React.FC<StepProps> = ({ data, onChange }) => {
         </div>
       </Card>
 
+      <Card title="Компактное резюме для клиента (обязательно)">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <Input
+            label="Бюджет вложений сразу, от (₽)"
+            type="number"
+            value={data.immediateBudgetFrom}
+            onChange={(e) => onChange('immediateBudgetFrom', e.target.value === '' ? '' : Number(e.target.value))}
+            placeholder="25000"
+          />
+          <Input
+            label="Бюджет вложений сразу, до (₽)"
+            type="number"
+            value={data.immediateBudgetTo}
+            onChange={(e) => onChange('immediateBudgetTo', e.target.value === '' ? '' : Number(e.target.value))}
+            placeholder="40000"
+          />
+        </div>
+
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3 text-xs text-blue-900">
+          Формат резюме: 1) документы и VIN, 2) юридические блокеры, 3) кузов/безопасность,
+          4) дорогие техриски, 5) итог и торг.
+        </div>
+
+        <Textarea
+          label="Итоговое заключение для клиента (кратко, 3–6 строк)"
+          value={data.clientConclusion}
+          onChange={(e) => onChange('clientConclusion', e.target.value)}
+          placeholder="Юридических блокеров не выявлено... Критичных рисков не найдено... Рекомендуется при торге..."
+        />
+      </Card>
+
       <Card title="Коды ошибок (OBD-II)">
         <div className="space-y-4">
           {data.obdCodes.length > 0 ? (
@@ -1399,6 +1537,8 @@ export const Step5History: React.FC<StepProps> = ({ data, onChange }) => {
           </div>
         </div>
       </Card>
+
+      <AttachmentSection title="Фото VIN/документов/диагностики и внешние отчёты" section="history" data={data} onChange={onChange} />
     </div>
   );
 };
