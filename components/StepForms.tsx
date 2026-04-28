@@ -1422,6 +1422,37 @@ export const Step5History: React.FC<StepProps> = ({ data, onChange }) => {
         </div>
       </Card>
 
+      <Card title="Компактное резюме для клиента (обязательно)">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <Input
+            label="Бюджет вложений сразу, от (₽)"
+            type="number"
+            value={data.immediateBudgetFrom}
+            onChange={(e) => onChange('immediateBudgetFrom', e.target.value === '' ? '' : Number(e.target.value))}
+            placeholder="25000"
+          />
+          <Input
+            label="Бюджет вложений сразу, до (₽)"
+            type="number"
+            value={data.immediateBudgetTo}
+            onChange={(e) => onChange('immediateBudgetTo', e.target.value === '' ? '' : Number(e.target.value))}
+            placeholder="40000"
+          />
+        </div>
+
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3 text-xs text-blue-900">
+          Формат резюме: 1) документы и VIN, 2) юридические блокеры, 3) кузов/безопасность,
+          4) дорогие техриски, 5) итог и торг.
+        </div>
+
+        <Textarea
+          label="Итоговое заключение для клиента (кратко, 3–6 строк)"
+          value={data.clientConclusion}
+          onChange={(e) => onChange('clientConclusion', e.target.value)}
+          placeholder="Юридических блокеров не выявлено... Критичных рисков не найдено... Рекомендуется при торге..."
+        />
+      </Card>
+
       <Card title="Коды ошибок (OBD-II)">
         <div className="space-y-4">
           {data.obdCodes.length > 0 ? (

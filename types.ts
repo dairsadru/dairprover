@@ -125,6 +125,9 @@ export interface InspectionData {
   customsCleared: boolean;
   serviceRecords: boolean;
   expertNotes: string;
+  clientConclusion: string;
+  immediateBudgetFrom: number | '';
+  immediateBudgetTo: number | '';
   obdCodes: ObdCode[];
 
   // NEW: Comprehensive Checklists
@@ -247,6 +250,9 @@ export const INITIAL_DATA: InspectionData = {
   customsCleared: true,
   serviceRecords: false,
   expertNotes: '',
+  clientConclusion: '',
+  immediateBudgetFrom: '',
+  immediateBudgetTo: '',
   obdCodes: [],
 
   extendedChecklist: {
