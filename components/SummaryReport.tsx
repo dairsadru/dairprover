@@ -149,9 +149,9 @@ export const SummaryReport: React.FC<SummaryProps> = ({ data }) => {
         {/* HEADER */}
         <div className="flex justify-between items-start border-b-4 border-blue-900 pb-6 mb-8">
             <div>
-              <h1 className="text-4xl font-black text-blue-900 uppercase tracking-tighter">ДаирАвтопроверка</h1>
+              <h1 className="text-4xl font-black text-blue-900 uppercase tracking-tighter">ДаирАвто</h1>
               <div className="mt-3 text-sm text-gray-600 space-y-1">
-                <div className="flex items-center gap-2"><MapPin size={14}/> Профессиональный автоподбор</div>
+                <div className="flex items-center gap-2"><MapPin size={14}/> Профессиональная проверка авто</div>
                 <div className="flex items-center gap-2"><Phone size={14}/> +7 931 244 6003</div>
               </div>
             </div>
@@ -204,6 +204,10 @@ export const SummaryReport: React.FC<SummaryProps> = ({ data }) => {
                </h3>
                <p className="text-sm opacity-90">{recommendation.reasons.length > 0 ? recommendation.reasons.join('. ') : 'Автомобиль в отличном состоянии.'}</p>
             </div>
+        </div>
+
+        <div className="mb-8 p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-900">
+          <p className="text-sm font-semibold">Реклама: компания по проверке авто «ДаирАвто» — 8 (931) 244-60-03.</p>
         </div>
 
         {/* BODY */}
